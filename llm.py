@@ -25,8 +25,15 @@ def call_llm(prompt):
         "response_format": {"type": "json_object"},
     }
 
-    response = requests.post(url, headers=headers, json=data)
+    try:
+        response = requests.post(url, headers=headers, json=data)
+        response.raise_for_status()
+        return response.json()
 
-    response.raise_for_status()
+    except requests.RequestException as e:
+        print("LLM API ERROR:", e)
+        raise
 
-    return response.json()
+    except ValueError as e:
+        print("LLM RESPONSE ERROR:", e)
+        raise

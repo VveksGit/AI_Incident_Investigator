@@ -1,6 +1,7 @@
 from datetime import datetime
 from typing import Literal
 
+import psycopg
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 
@@ -65,9 +66,20 @@ def investigate_incident_endpoint(incident_data: IncidentRequest):
     try:
         incident = incident_data.model_dump()
         return investigate_and_store_incident(incident)
+
+    except psycopg.Error as e:
+        print("DATABASE ERROR:", e)
+        raise HTTPException(
+            status_code=503,
+            detail="Database service is temporarily unavailable.",
+        )
+
     except Exception as e:
         print("ERROR:", e)
-        raise
+        raise HTTPException(
+            status_code=500,
+            detail="Incident investigation service is temporarily unavailable.",
+        )
 
 
 @app.get("/incidents", response_model=list[IncidentResponse])
