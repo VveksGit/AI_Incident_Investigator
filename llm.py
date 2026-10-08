@@ -1,9 +1,13 @@
+import logging
 import os
+import time
 
 import requests
 from dotenv import load_dotenv
 
 load_dotenv()
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 
 def call_llm(prompt):
@@ -25,15 +29,42 @@ def call_llm(prompt):
         "response_format": {"type": "json_object"},
     }
 
-    try:
-        response = requests.post(url, headers=headers, json=data)
-        response.raise_for_status()
-        return response.json()
+    for attempt in range(3):
+        try:
+            response = requests.post(
+                url,
+                headers=headers,
+                json=data,
+                timeout=30,
+            )
 
-    except requests.RequestException as e:
-        print("LLM API ERROR:", e)
-        raise
+            response.raise_for_status()
+            return response.json()
 
-    except ValueError as e:
-        print("LLM RESPONSE ERROR:", e)
-        raise
+        except requests.HTTPError as e:
+            logger.error(
+                "LLM HTTP ERROR (attempt %s/3): %s",
+                attempt + 1,
+                e,
+            )
+
+            if response.status_code < 500 or attempt == 2:
+                raise
+
+            time.sleep(2)
+
+        except requests.RequestException as e:
+            logger.error(
+                "LLM API ERROR (attempt %s/3): %s",
+                attempt + 1,
+                e,
+            )
+
+            if attempt == 2:
+                raise
+
+            time.sleep(2)
+
+        except ValueError as e:
+            logger.error("LLM RESPONSE ERROR: %s", e)
+            raise

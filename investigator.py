@@ -1,6 +1,9 @@
 import json
+import logging
 
 from llm import call_llm
+
+logger = logging.getLogger(__name__)
 
 
 def validate_incident(incident):
@@ -121,6 +124,7 @@ def validate_investigation(investigation):
 def investigate_incident(incident):
 
     if not validate_incident(incident):
+        logger.warning("Invalid incident data received")
         return None
 
     normalized_incident = normalize_incident(incident)
@@ -131,6 +135,7 @@ def investigate_incident(incident):
     investigation = json.loads(content)
 
     if not validate_investigation(investigation):
+        logger.warning("LLM investigation output failed validation")
         return None
 
     with open("llm_response.json", "w") as file:

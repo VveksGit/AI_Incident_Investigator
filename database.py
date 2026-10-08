@@ -1,20 +1,41 @@
+import logging
 import os
+import time
 
 import psycopg
 from dotenv import load_dotenv
 from psycopg.types.json import Jsonb
 
 load_dotenv()
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 
 def get_connection():
-    return psycopg.connect(
-        dbname="incident_db",
-        user="postgres",
-        password=os.getenv("POSTGRES_PASSWORD"),
-        host="localhost",
-        port=5432,
-    )
+    for attempt in range(3):
+        try:
+            return psycopg.connect(
+                dbname="incident_db",
+                user="postgres",
+                password=os.getenv("POSTGRES_PASSWORD"),
+                host="localhost",
+                port=5432,
+                connect_timeout=10,
+            )
+
+        except psycopg.OperationalError as e:
+            logger.error(
+                "DB CONNECTION ERROR (attempt %s/3): %s",
+                attempt + 1,
+                e,
+            )
+
+            if attempt == 2:
+                raise
+
+            time.sleep(2)
+
+    raise RuntimeError("Failed to establish database connection")
 
 
 def save_incident(incident, connection=None):
