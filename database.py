@@ -15,12 +15,12 @@ def get_connection():
     for attempt in range(3):
         try:
             return psycopg.connect(
-                dbname="incident_db",
-                user="postgres",
+                dbname=os.getenv("POSTGRES_DB"),
+                user=os.getenv("POSTGRES_USER"),
                 password=os.getenv("POSTGRES_PASSWORD"),
-                host="localhost",
-                port=5432,
-                connect_timeout=10,
+                host=os.getenv("POSTGRES_HOST"),
+                port=int(os.getenv("POSTGRES_PORT")),
+                connect_timeout=int(os.getenv("DB_CONNECT_TIMEOUT")),
             )
 
         except psycopg.OperationalError as e:

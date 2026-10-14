@@ -18,7 +18,7 @@ def call_llm(prompt):
     headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
 
     data = {
-        "model": "openrouter/free",
+        "model": os.getenv("OPENROUTER_MODEL"),
         "messages": [
             {
                 "role": "system",
@@ -35,7 +35,7 @@ def call_llm(prompt):
                 url,
                 headers=headers,
                 json=data,
-                timeout=30,
+                timeout=int(os.getenv("LLM_TIMEOUT")),
             )
 
             response.raise_for_status()
