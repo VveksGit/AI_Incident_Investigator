@@ -1,3 +1,4 @@
+import logging
 from datetime import datetime
 from typing import Literal
 
@@ -11,6 +12,8 @@ from database import (
     get_investigation_by_incident_id,
 )
 from service import investigate_and_store_incident
+
+logger = logging.getLogger(__name__)
 
 app = FastAPI()
 
@@ -68,14 +71,14 @@ def investigate_incident_endpoint(incident_data: IncidentRequest):
         return investigate_and_store_incident(incident)
 
     except psycopg.Error as e:
-        print("DATABASE ERROR:", e)
+        logger.exception("Database error during incident investigation")
         raise HTTPException(
             status_code=503,
             detail="Database service is temporarily unavailable.",
         )
 
     except Exception as e:
-        print("ERROR:", e)
+        logger.exception("Unexpected error during incident investigation")
         raise HTTPException(
             status_code=500,
             detail="Incident investigation service is temporarily unavailable.",
@@ -87,27 +90,42 @@ def get_incidents_endpoint():
     try:
         return get_incidents()
 
-    except Exception:
-        raise HTTPException(status_code=502, detail="Failed to retrieve incidents.")
+    except psycopg.Error:
+        logger.exception("Database error while retrieving data")
+        raise HTTPException(
+            status_code=503, detail="Database service is temporarily unavailable."
+        )
 
 
 @app.get("/incidents/{incident_id}", response_model=IncidentResponse)
 def get_incident_endpoint(incident_id: int):
-    incident = get_incident_by_id(incident_id)
+    try:
+        incident = get_incident_by_id(incident_id)
 
-    if incident is None:
-        raise HTTPException(status_code=404, detail="Incident not found.")
+        if incident is None:
+            raise HTTPException(status_code=404, detail="Incident not found.")
 
-    return incident
+        return incident
+    except psycopg.Error:
+        logger.exception("Database error while retrieving data")
+        raise HTTPException(
+            status_code=503, detail="Database service is temporarily unavailable."
+        )
 
 
 @app.get(
     "/incidents/{incident_id}/investigation", response_model=StoredInvestigationResponse
 )
 def get_investigation_endpoint(incident_id: int):
-    investigation = get_investigation_by_incident_id(incident_id)
+    try:
+        investigation = get_investigation_by_incident_id(incident_id)
 
-    if investigation is None:
-        raise HTTPException(status_code=404, detail="Investigation not found.")
+        if investigation is None:
+            raise HTTPException(status_code=404, detail="Investigation not found.")
 
-    return investigation
+        return investigation
+    except psycopg.Error:
+        logger.exception("Database error while retrieving data")
+        raise HTTPException(
+            status_code=503, detail="Database service is temporarily unavailable."
+        )

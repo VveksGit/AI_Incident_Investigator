@@ -130,6 +130,9 @@ def save_investigation(investigation, incident_id, connection=None):
 
         cursor.close()
 
+        if own_connection:
+            connection.commit()
+
         return investigation_id
     except Exception:
         if own_connection:
@@ -137,7 +140,6 @@ def save_investigation(investigation, incident_id, connection=None):
         raise
     finally:
         if own_connection:
-            connection.commit()
             connection.close()
 
 

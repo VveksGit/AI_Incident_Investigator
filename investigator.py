@@ -125,7 +125,7 @@ def investigate_incident(incident):
 
     if not validate_incident(incident):
         logger.warning("Invalid incident data received")
-        return None
+        raise ValueError("Invalid incident data received")
 
     normalized_incident = normalize_incident(incident)
     prompt = build_prompt(normalized_incident)
@@ -136,7 +136,7 @@ def investigate_incident(incident):
 
     if not validate_investigation(investigation):
         logger.warning("LLM investigation output failed validation")
-        return None
+        raise ValueError("LLM investigation output failed validation")
 
     with open("llm_response.json", "w") as file:
         json.dump(result, file, indent=4)
