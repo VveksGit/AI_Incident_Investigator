@@ -145,95 +145,100 @@ def save_investigation(investigation, incident_id, connection=None):
 
 def get_incidents():
     connection = get_connection()
-    cursor = connection.cursor()
 
-    cursor.execute("""
-        SELECT id, service, timestamp, description, created_at
-        FROM incidents
-        ORDER BY id;
-    """)
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute("""
+                SELECT id, service, timestamp, description, created_at
+                FROM incidents
+                ORDER BY id;
+            """)
 
-    rows = cursor.fetchall()
-    incidents = []
+            rows = cursor.fetchall()
 
-    for row in rows:
-        incidents.append(
-            {
-                "id": row[0],
-                "service": row[1],
-                "timestamp": row[2],
-                "description": row[3],
-                "created_at": row[4],
-            }
-        )
-    cursor.close()
-    connection.close()
+        incidents = []
 
-    return incidents
+        for row in rows:
+            incidents.append(
+                {
+                    "id": row[0],
+                    "service": row[1],
+                    "timestamp": row[2],
+                    "description": row[3],
+                    "created_at": row[4],
+                }
+            )
+
+        return incidents
+
+    finally:
+        connection.close()
 
 
 def get_incident_by_id(incident_id):
     connection = get_connection()
-    cursor = connection.cursor()
 
-    cursor.execute(
-        """
-        SELECT id, service, timestamp, description, logs, deployment, created_at
-        FROM incidents
-        WHERE id = %s;
-    """,
-        (incident_id,),
-    )
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                """
+                SELECT id, service, timestamp, description, logs, deployment, created_at
+                FROM incidents
+                WHERE id = %s;
+                """,
+                (incident_id,),
+            )
 
-    row = cursor.fetchone()
+            row = cursor.fetchone()
 
-    cursor.close()
-    connection.close()
+        if row is None:
+            return None
 
-    if row is None:
-        return None
+        return {
+            "id": row[0],
+            "service": row[1],
+            "timestamp": row[2],
+            "description": row[3],
+            "logs": row[4],
+            "deployment": row[5],
+            "created_at": row[6],
+        }
 
-    return {
-        "id": row[0],
-        "service": row[1],
-        "timestamp": row[2],
-        "description": row[3],
-        "logs": row[4],
-        "deployment": row[5],
-        "created_at": row[6],
-    }
+    finally:
+        connection.close()
 
 
 def get_investigation_by_incident_id(incident_id):
     connection = get_connection()
-    cursor = connection.cursor()
 
-    cursor.execute(
-        """
-        SELECT id, incident_id, incident_type, summary,
-               hypotheses, missing_information, created_at
-        FROM investigations
-        WHERE incident_id = %s
-        ORDER BY id DESC
-        LIMIT 1;
-    """,
-        (incident_id,),
-    )
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                """
+                SELECT id, incident_id, incident_type, summary,
+                       hypotheses, missing_information, created_at
+                FROM investigations
+                WHERE incident_id = %s
+                ORDER BY id DESC
+                LIMIT 1;
+                """,
+                (incident_id,),
+            )
 
-    row = cursor.fetchone()
+            row = cursor.fetchone()
 
-    cursor.close()
-    connection.close()
+        if row is None:
+            return None
 
-    if row is None:
-        return None
+        return {
+            "id": row[0],
+            "incident_id": row[1],
+            "incident_type": row[2],
+            "summary": row[3],
+            "hypotheses": row[4],
+            "missing_information": row[5],
+            "created_at": row[6],
+        }
 
-    return {
-        "id": row[0],
-        "incident_id": row[1],
-        "incident_type": row[2],
-        "summary": row[3],
-        "hypotheses": row[4],
-        "missing_information": row[5],
-        "created_at": row[6],
-    }
+    finally:
+        connection.close()
